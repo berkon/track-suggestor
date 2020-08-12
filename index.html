@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Track Suggestor</title>
+
+	<script src="js/lib/jquery-1.9.1.min.js"></script>
+	<script src="js/lib/angular.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+
+<body ng-app="track_suggestor">
+	<div ng-controller="suggestor">
+		<div ng-show="openSettings" style="display: flex; flex-direction: column; padding: 50px">
+			<div ng-show="errors[0]">
+				<h4>Messages</h4>
+				<h4 class="error-message" ng-bind="errors[0].msg"></h4>
+			</div>
+			<div style="flex-direction: row;" class="margin-top-30" title="Select MIDI port on which to receive Traktor data">
+				<h4>MIDI port</h4>
+				<select ng-class="{'success' : midi_connected}" ng-change="selectMIDIIn()" ng-model="selected_midi_input">
+					<option value="" disabled selected>&lt;Please select MIDI port&gt;</option>
+					<option ng-repeat="midi_input in midi_inputs" ng-value="midi_input">{{midi_input.name}}</option>
+				</select>
+			</div>
+
+			<h4 class="margin-top-40">Traktor collection</h4>
+			<div style="display:flex; flex-direction: row" title="Choose Traktor's 'collection.nml' file to import">
+				<input type="text" value="{{collection_nml}}" ng-click="ChooseCollectionNml()">
+				<button class="unicode-icon" ng-class="collection_loaded ? 'success' : 'error'" ng-click="ChooseCollectionNml()">&#128193;</button>
+			</div>
+
+			<h4 class="margin-top-40">Recommendations playlists directory</h4>
+			<div style="display:flex; flex-direction: row" title="Chose a folder where to save the generated recommendation playlists">
+				<input type="text" value="{{recommendation_path}}" ng-click="ChooseRecommendationPath()">
+				<button class="unicode-icon" ng-class="recommendation_path ? 'success' : 'error'" ng-click="ChooseRecommendationPath()">&#128193;</button>
+			</div>
+
+			<button class="back-button margin-top-70" ng-click="openSettings=!openSettings">Back</button>
+		</div>
+
+		<div ng-hide="openSettings" style="padding: 0 15px">
+			<div class="deck-row">
+				<div class="deck">
+					<h4>Deck A</h4>
+					<input id="deck_A" type="text" class="deck-output" value="{{deck_A}}" placeholder="<EMPTY>" readonly="readonly" ng-class="getDeckColor('A')"/>
+				</div>
+
+				<div class="deck">
+					<h4>Deck B</h4>
+					<input id="deck_B" type="text" class="deck-output" value="{{deck_B}}" placeholder="<EMPTY>" readonly="readonly" ng-class="getDeckColor('B')"/>
+				</div>
+			</div>
+
+			<div class="donate">
+				<img ng-click="openDonateWindow()" alt="" src="btn_donateCC_LG.gif"/>
+			</div>
+
+			<div class="margin-15">
+				<div style="display: flex; flex-direction: row;">
+					<h4 style="margin-top: 15px; flex-grow: 1;">Recommended tracks</h4>
+					<div id="loader"></div>
+				</div>
+				<div class="grid-container">
+					<div class="grid-header-row">
+						<div class="grid-header-item" style="flex-grow: 4;">Track</div>
+						<div class="grid-header-item" style="flex-grow: 4;">Artist</div>
+						<div class="grid-header-item" style="flex-grow: 3;">Genre</div>
+						<div class="grid-header-item" style="flex-grow: 1;">BPM</div>
+						<div class="grid-header-item" style="flex-grow: 1;">Key</div>
+						<div class="scrollbar-fill"></div>
+					</div>
+	
+					<div class="scroll-container">
+						<div class="grid-row" ng-repeat="match in matching_tracks_arr" ng-class-even="'even-line'" ng-class-odd="'odd-line'">
+							<div class="grid-item" ng-class="{'source-deck':$first}" style="flex-grow: 4">{{match.track}}</div>
+							<div class="grid-item" ng-class="{'source-deck':$first}" style="flex-grow: 4">{{match.artist}}</div>
+							<div class="grid-item" ng-class="{'source-deck':$first}" style="flex-grow: 3">{{match.genre}}</div>
+							<div class="grid-item" ng-class="{'source-deck':$first}" style="flex-grow: 1">{{match.bpm}}</div>
+							<div class="grid-item" ng-class="{'source-deck':$first}" style="flex-grow: 1">{{match.key_notation}}</div>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+		
+	<script>
+		require('./js/renderer.js');
+		require('./js/service.js');
+	</script>
+</body>
+</html>

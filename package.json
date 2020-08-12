@@ -1,0 +1,32 @@
+{
+  "name": "track_suggestor",
+  "productName": "Track Suggestor",
+  "version": "1.4.0",
+  "description": "Suggest matching songs to DJs using Traktor Pro",
+  "main": "./js/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "author": "Bernd Konnerth",
+  "license": "GPL-2.0",
+  "devDependencies": {
+    "electron": "^7.1.7",
+    "electron-builder": "^21.2.0"
+  },
+  "dependencies": {
+    "configstore": "^5.0.0",
+    "electron-localshortcut": "^3.2.1",
+    "xml2js": "^0.4.23"
+  },
+  "build": {
+    "appId": "track-suggestor",
+    "win": {
+      "target": "portable",
+      "icon": "build/wave.ico"
+    },
+    "mac": {
+      "target": "dmg"
+    }
+  }
+}
