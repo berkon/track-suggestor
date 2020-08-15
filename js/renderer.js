@@ -291,10 +291,10 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 						$scope.deck_A = res.track + "  -  " + res.artist;
 						$scope.sourceDeck = "A"
 						$scope.$apply();
+						CreatePlaylist ( res );
 					}
 
 					$("#loader").css("display","none")
-					CreatePlaylist ( res );
 				}
 				else if ( 	line_complete[2] == 1 &&
 							line_complete[3] == 1 &&
@@ -323,10 +323,10 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 						$scope.deck_B = res.track + "  -  " + res.artist;
 						$scope.sourceDeck = "B"
 						$scope.$apply();
+						CreatePlaylist ( res );
 					}
 
 					$("#loader").css("display","none")
-					CreatePlaylist ( res );
 				}
 			}
 
