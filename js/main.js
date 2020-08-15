@@ -45,7 +45,7 @@ function createWindow () {
 	}})
 	menuJSON[0].submenu.push ({ label: 'Help', click () {
 		helpWindow = new BrowserWindow ( {
-			width: 800,
+			width: 850,
 			height: 768,
 			minWidth: 600,
 			minHeight: 768
