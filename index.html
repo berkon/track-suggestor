@@ -42,12 +42,17 @@
 		<div ng-hide="openSettings" style="padding: 0 15px">
 			<div class="deck-row">
 				<div class="deck">
-					<h4>Deck A</h4>
+					<div style="flex-direction: row; display:flex">
+						<h4>Deck A</h4>
+						<div class="loader" ng-class="{'hidden':hideSpinnerA}"></div>
+					</div>
 					<input id="deck_A" type="text" class="deck-output" value="{{deck_A}}" placeholder="<EMPTY>" readonly="readonly" ng-class="getDeckColor('A')"/>
 				</div>
-
 				<div class="deck">
-					<h4>Deck B</h4>
+					<div style="flex-direction: row; display:flex">
+						<h4>Deck B</h4>
+						<div class="loader" ng-class="{'hidden':hideSpinnerB}"></div>
+					</div>
 					<input id="deck_B" type="text" class="deck-output" value="{{deck_B}}" placeholder="<EMPTY>" readonly="readonly" ng-class="getDeckColor('B')"/>
 				</div>
 			</div>
@@ -57,10 +62,6 @@
 			</div>
 
 			<div class="margin-15">
-				<div style="display: flex; flex-direction: row;">
-					<h4 style="margin-top: 15px; flex-grow: 1;">Recommended tracks</h4>
-					<div id="loader"></div>
-				</div>
 				<div class="grid-container">
 					<div class="grid-header-row">
 						<div class="grid-header-item" style="flex-grow: 4;">Track</div>

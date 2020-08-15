@@ -33,7 +33,8 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	$scope.deck_A_error           = false;
 	$scope.deck_B_error           = false;
 	$scope.sourceDeck             = null;
-
+	$scope.hideSpinnerA           = false
+	$scope.hideSpinnerB           = false
 	$scope.errors  = []
 
 	var UNKNOWN = -1;
@@ -108,14 +109,12 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 
 	var pos           		   = [ -1, -1, -1, -1 ]
 	var last_pos      		   = []
-	var newCharOnPos11         		   = []
+	var newCharOnPos11    	   = []
 	var line_char_array        = [ [], [], [], [] ]
 	var line_static_str        = []
 	var line_static_str_SHADOW = [ '', '', '', '' ]
 
 	var newTrackLoaded = ''
-
-	$("#loader").css("display","none");
 
 	ipcRenderer.on ( 'OPEN_SETTINGS', (event, message) => {
 		$scope.openSettings = true
@@ -170,15 +169,31 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	}
 
 	function ExtractString ( line_idx ) {
-		let startMarker = -1
-		let stopMarker  = -1
+		let startMarker = line_static_str_SHADOW[line_idx].indexOf    ("   ")
+		let stopMarker  = line_static_str_SHADOW[line_idx].lastIndexOf("   ")
 		let res         = null
 
-		if ( (startMarker = line_static_str_SHADOW[line_idx].indexOf    ("   ")) !== -1 &&
-			 (stopMarker  = line_static_str_SHADOW[line_idx].lastIndexOf("   ")) !== -1 &&
-			 startMarker !== stopMarker ) {
+		if ( startMarker !== -1 && stopMarker === startMarker)
+			stopMarker = -1
 
-			startMarker += 3 // ignore marker
+		if ( startMarker !== -1 && 
+			 stopMarker  === -1 &&
+			 line_static_str[line_idx] &&
+			 line_static_str[line_idx].indexOf(line_static_str_SHADOW[line_idx].substr(startMarker + 3).trim()) === -1 ) {
+
+			if ( line_idx < 2) {
+				$scope.hideSpinnerA = false
+				$scope.deck_A = "Loading ..."
+			} else {
+				$scope.hideSpinnerB = false
+				$scope.deck_B = "Loading ..."
+			}
+			$scope.$apply()
+		}
+
+
+		if ( startMarker !== -1 && stopMarker !== -1 && startMarker !== stopMarker ) {
+			startMarker += 3
 			let tmpStr = line_static_str_SHADOW[line_idx].substr ( startMarker, stopMarker - startMarker )
 			line_static_str_SHADOW[line_idx] = ""
 
@@ -193,39 +208,39 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 				if ( typeof res === "string" ) {
 					$scope.deck_A_error = true
 					$scope.deck_A = res
-					$scope.$apply()
 					console.log ( "Deck A: " + line_static_str[0] + "  -  " + line_static_str[1] + " : " + res )
+					$scope.hideSpinnerA = true
 				} else {
 					if ( res && res.track && res.artist ) {
 						$scope.deck_A_error = false;
 						$scope.deck_A = res.track + "  -  " + res.artist;
 						$scope.sourceDeck = "A"
-						$scope.$apply();
 						console.log ( "Deck A: " + $scope.deck_A )
 						CreatePlaylist ( res )
+						$scope.hideSpinnerA = true
 					}
 				}
+				$scope.$apply()
 			} else {
 				res = GetEntry ( line_static_str[2], line_static_str[3] )
 
 				if ( typeof res === "string" ) {
 					$scope.deck_B_error = true
 					$scope.deck_B = res
-					$scope.$apply()
 					console.log ( "Deck B: " + line_static_str[2] + "  -  " + line_static_str[3] + " : " + res )
+					$scope.hideSpinnerB = true
 				} else {
 					if ( res && res.track && res.artist ) {
 						$scope.deck_B_error = false;
 						$scope.deck_B = res.track + "  -  " + res.artist;
 						$scope.sourceDeck = "B"
-						$scope.$apply();
 						console.log ( "Deck B: " + $scope.deck_B )
 						CreatePlaylist ( res )
+						$scope.hideSpinnerB = true
 					}
 				}
+				$scope.$apply()
 			}
-
-			$("#loader").css("display","none")
 		} else {
 			if ( newCharOnPos11[line_idx] ) {
 				line_static_str_SHADOW[line_idx] += line_char_array[line_idx][11]
@@ -840,7 +855,6 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 
 	function ReadCollectionNML () {
 		$scope.collection_loaded = false
-		$("#loader").css("display","")
 
 		fs.readFile( $scope.collection_nml, function (err, data) {
 			g_parser.parseString(data, function (err, xml) {
@@ -942,7 +956,5 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		$scope.errors.push ({ id: "ERR_NO_RECOMMEND_FOLDER", msg: "ERROR: Please select a folder to store recommendation playlists!" })
 		console.log ( "ERROR: Please select a folder to store recommendation playlists!" )
 		$scope.openSettings = true
-	}	
-
-	console.log ($scope.errors)
+	}
 })
