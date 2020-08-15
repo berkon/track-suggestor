@@ -559,9 +559,11 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	}
 
 	function EscapeHTML ( str ) {
-		str = str.replace(/&/g, "&amp;"); //Encode ampersand in HTML
-		str = str.replace(/</g, "&lt;" ); //Encode '<' in HTML
-		str = str.replace(/>/g, "&gt;" ); //Encode '>' in HTML
+		if ( str ) {
+			str = str.replace(/&/g, "&amp;"); //Encode ampersand in HTML
+			str = str.replace(/</g, "&lt;" ); //Encode '<' in HTML
+			str = str.replace(/>/g, "&gt;" ); //Encode '>' in HTML
+		}
 		return str;
 	}
 
