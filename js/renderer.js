@@ -935,19 +935,14 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	}
 
 	let removeError = function ( ids ) {
-		console.log ( $scope.errors)
-		console.log ( ids )
-
 		for ( id of ids ) {
-			console.log ( id)
 			let idx = $scope.errors.findIndex ( entry => entry.id === id )
-			console.log ( idx)
+
 			if ( idx != -1 )
 				$scope.errors.splice ( idx, 1 )
 		}
 
 		$scope.$apply()
-		console.log ( $scope.errors)
 	}
 
 	function ReadCollectionNML () {
@@ -1034,7 +1029,6 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 
 	$scope.getDeckColor = function ( deck ) {
 		if ( (deck === 'A' && $scope.deck_A_error) || (deck === 'B' && $scope.deck_B_error) ) {
-			console.log ($scope.deck_B_error)
 			return 'error-text-color'
 		} else if ( $scope.sourceDeck === deck )
 			return 'source-deck'

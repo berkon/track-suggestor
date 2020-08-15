@@ -254,10 +254,6 @@ h4 {
 
 .donate {
 	text-align: center;
-    position: absolute;
-    left: auto;
-    right: auto;
-    width: 100%;
 }
 
 select, input {
