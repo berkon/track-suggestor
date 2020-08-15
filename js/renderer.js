@@ -24,7 +24,6 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	$scope.last_midi_in        = conf.get ("last_midi_in"       );
 
 	$scope.openSettings = false
-
 	$scope.viewTab = viewTab;
 	$scope.midi_connected         = false;
 	$scope.selected_midi_input    = null;
@@ -44,14 +43,12 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	var UNDEFINED = -1;
 
 	var g_midi   = null;
-	var g_midiIn = null;
 
 	var MSB_0 = UNDEFINED;
 	var LSB_0 = UNDEFINED;
 	var WAIT_LSB_0 = 0;
 	var MSB_1 = UNDEFINED;
 	var LSB_1 = UNDEFINED;
-	var line  = UNDEFINED;
 	var WAIT_LSB_1 = 0;
 
 	var MIDI_CHAN_HC4500_DECK_A = 0x00;
@@ -109,28 +106,14 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	var LINE_2_CHAR_11_LSB = 0x38;
 	var LINE_2_CHAR_12_LSB = 0x39;
 
-	var pos           = new Array (   UNDEFINED,   UNDEFINED,   UNDEFINED,   UNDEFINED );
-	var last_pos      = new Array (    0,    0,    0,    0 );
-	var new11         = new Array (    0,    0,    0,    0 );
-	var line_complete = new Array (    0,    0,    0,    0 );
-	var line_elem     = new Array ( null, null, null, null );
-	var reset_once    = new Array ( false, false, false, false );
+	var pos           		   = [ -1, -1, -1, -1 ]
+	var last_pos      		   = []
+	var newCharOnPos11         		   = []
+	var line_char_array        = [ [], [], [], [] ]
+	var line_static_str        = []
+	var line_static_str_SHADOW = [ '', '', '', '' ]
 
-	var line_char_array = new Array (  new Array ( "","","","","","","","","","","","" ),
-									   new Array ( "","","","","","","","","","","","" ),
-									   new Array ( "","","","","","","","","","","","" ),
-									   new Array ( "","","","","","","","","","","","" ) );
-
-	var line_static_str_VISUAL = new Array ( "", "", "", "" );
-	var line_static_str        = new Array ( "", "", "", "" );
-	var line_static_str_SHADOW = new Array ( "", "", "", "" );
-
-	var midi_tick_counter = 0;
-
-	var g_track_A  = "";
-	var g_artist_A = "";
-	var g_track_B  = "";
-	var g_artist_B = "";
+	var newTrackLoaded = ''
 
 	$("#loader").css("display","none");
 
@@ -138,27 +121,6 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		$scope.openSettings = true
 		$scope.$apply()
 	})
-
-	function RemoveMultipleUnderscores ( str ) {
-		var k;
-		var str1 = "";
-		var str2 = "";
-
-		for ( k = 0 ; k < str.length - 1 ; k++ ) {
-			while ( k < str.length - 1 && str.substr ( k, 1 ) == "_" && str.substr ( k + 1, 1 ) == "_" ) {
-				str1 = str.substring ( 0, k + 1 );
-
-				if ( k < str.length - 2 )
-					str2 = str.substr ( k + 2 );
-				else
-					str2 = "";
-
-				str  = str1 + str2;
-			}
-		}
-
-		return str;
-	}
 
 	// Identical characters following each other are not written by Traktors algorithm!!! Instead Traktor
 	// obviously expects the controller to fill these spaces automatically up to the next, officially by
@@ -172,169 +134,102 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	//     *
 	//      *
 	//       ......
-	// FillUnwrittenChars() performs this mechanism
-	function FillUnwrittenChars ( str, line_idx ) {
-		line_char_array[line_idx][pos[line_idx]] = str;
+	// BufferConditioner() performs this mechanism
+	function BufferConditioner ( str, line_idx ) {
+		if ( pos[line_idx] === 11 && !( str === '_' && str === line_char_array[line_idx][11]))
+			newCharOnPos11[line_idx] = true
+
+		line_char_array[line_idx][pos[line_idx]] = str
 
 		if ( pos[line_idx] - last_pos[line_idx] > 1 && line_char_array[line_idx][last_pos[line_idx]] != "_" ) {
 			while ( last_pos[line_idx] < pos[line_idx] - 1 ) {
-				line_char_array[line_idx][last_pos[line_idx] + 1] = line_char_array[line_idx][last_pos[line_idx]];
-				last_pos[line_idx]++;
+				line_char_array[line_idx][last_pos[line_idx] + 1] = line_char_array[line_idx][last_pos[line_idx]]
+				last_pos[line_idx]++
 			}
 		}
 		else if ( pos[line_idx] < last_pos[line_idx] && last_pos[line_idx] < 11 && line_char_array[line_idx][last_pos[line_idx]] != "_") {
 			while ( last_pos[line_idx] < 11 ) {
-				line_char_array[line_idx][last_pos[line_idx] + 1] = line_char_array[line_idx][last_pos[line_idx]];
-				last_pos[line_idx]++;
+				line_char_array[line_idx][last_pos[line_idx] + 1] = line_char_array[line_idx][last_pos[line_idx]]
+				last_pos[line_idx]++
 
 				if ( last_pos[line_idx] == 11 )
-					new11[line_idx] = 1;
+					newCharOnPos11[line_idx] = true
 			}
 
 			if ( pos[line_idx] > 0 ) {
-				last_pos[line_idx] = 0;
+				last_pos[line_idx] = 0
 
 				while ( last_pos[line_idx] < pos[line_idx] - 1 ) {
-					line_char_array[line_idx][last_pos[line_idx] + 1] = line_char_array[line_idx][last_pos[line_idx]];
-					last_pos[line_idx]++;
+					line_char_array[line_idx][last_pos[line_idx] + 1] = line_char_array[line_idx][last_pos[line_idx]]
+					last_pos[line_idx]++
 				}
 			}
 		}
 
-		if ( pos[line_idx] == 11 )
-			new11[line_idx] = 1;
-
-		last_pos[line_idx] = pos[line_idx];
+		last_pos[line_idx] = pos[line_idx]
 	}
 
-	// Find start marker (3 blanks) and send string via php to server.
-	function FindStart ( line_idx ) {
-		if ( line_static_str_SHADOW[line_idx].lastIndexOf("   ") != UNDEFINED ) {
-			// Remove trailing blanks
-			while ( line_static_str_SHADOW[line_idx].substr ( line_static_str_SHADOW[line_idx].length-1, 1 ) == " " )
-				line_static_str_SHADOW[line_idx] = line_static_str_SHADOW[line_idx].substr ( 0, line_static_str_SHADOW[line_idx].length-1 );
+	function ExtractString ( line_idx ) {
+		let startMarker = -1
+		let stopMarker  = -1
+		let res         = null
 
-			// If there are multiple underscores due to german "Umlaute" reduce every multiple to one underscore
-			line_static_str_SHADOW[line_idx] = RemoveMultipleUnderscores ( line_static_str_SHADOW[line_idx] );
+		if ( (startMarker = line_static_str_SHADOW[line_idx].indexOf    ("   ")) !== -1 &&
+			 (stopMarker  = line_static_str_SHADOW[line_idx].lastIndexOf("   ")) !== -1 &&
+			 startMarker !== stopMarker ) {
 
-			// String not final yet, due to marker confusion?
-			if ( line_static_str[line_idx] != line_static_str_SHADOW[line_idx] ) {
-				line_static_str[line_idx] = line_static_str_SHADOW[line_idx];
-				line_complete[line_idx] = 0;
-			} else {
-				line_complete[line_idx] = 1;
+			startMarker += 3 // ignore marker
+			let tmpStr = line_static_str_SHADOW[line_idx].substr ( startMarker, stopMarker - startMarker )
+			line_static_str_SHADOW[line_idx] = ""
 
-				// If line 0 has been completed reset line 1 once to ensure that track an artist match. Otherwise a track could get the wrong artist!
-				if ( line_idx == 0 ) {
-					if ( reset_once[1] == false ) {
-						line_complete[1] = 0;
-						reset_once[1] = true;
-					}
-					else
-						reset_once[1] = false;
-				}
+			if ( tmpStr === line_static_str[line_idx] )
+				return
 
-				// If line 1 has been completed reset line 0 once to ensure that track an artist match. Otherwise a track could get the wrong artist!
-				if ( line_idx == 1 ) {
-					if ( reset_once[0] == false ) {
-						line_complete[0] = 0;
-						reset_once[0] = true;
-					}
-					else
-						reset_once[0] = false;
-				}
+			line_static_str[line_idx] = tmpStr
+			
+			if ( line_idx < 2) {
+				res = GetEntry ( line_static_str[0], line_static_str[1] )
 
-				// If line 2 has been completed reset line 3 once to ensure that track an artist match. Otherwise a track could get the wrong artist!
-				if ( line_idx == 2 ) {
-					if ( reset_once[3] == false ) {
-						line_complete[3] = 0;
-						reset_once[3] = true;
-					}
-					else
-						reset_once[3] = false;
-				}
-
-				// If line 3 has been completed reset line 2 once to ensure that track an artist match. Otherwise a track could get the wrong artist!
-				if ( line_idx == 3 ) {
-					if ( reset_once[2] == false ) {
-						line_complete[2] = 0;
-						reset_once[2] = true;
-					}
-					else
-						reset_once[2] = false;
-				}
-
-				if ( 	line_complete[0] == 1 &&
-						line_complete[1] == 1 &&
-						( line_static_str_VISUAL[0] != line_static_str[0] ||
-						  line_static_str_VISUAL[1] != line_static_str[1] )   ) {
-					line_static_str_VISUAL[0] = line_static_str[0];
-					line_static_str_VISUAL[1] = line_static_str[1];
-
-					g_track_A  = line_static_str[0];
-					g_artist_A = line_static_str[1];
-
-					var res = GetEntry ( line_static_str[0], line_static_str[1] );
-
-					line_complete[0] = 0;
-					line_complete[1] = 0;
-
-	console.log ( "Deck A  Title: " + res.track );
-	console.log ( "Deck A Artist: " + res.artist );
-
-					if ( typeof res === "string" ) {
-						$scope.deck_A_error = true;
-						$scope.deck_A = res;
-						$scope.$apply();
-					} else {
+				if ( typeof res === "string" ) {
+					$scope.deck_A_error = true
+					$scope.deck_A = res
+					$scope.$apply()
+					console.log ( "Deck A: " + line_static_str[0] + "  -  " + line_static_str[1] + " : " + res )
+				} else {
+					if ( res && res.track && res.artist ) {
 						$scope.deck_A_error = false;
 						$scope.deck_A = res.track + "  -  " + res.artist;
 						$scope.sourceDeck = "A"
 						$scope.$apply();
-						CreatePlaylist ( res );
+						console.log ( "Deck A: " + $scope.deck_A )
+						CreatePlaylist ( res )
 					}
-
-					$("#loader").css("display","none")
 				}
-				else if ( 	line_complete[2] == 1 &&
-							line_complete[3] == 1 &&
-							( line_static_str_VISUAL[2] != line_static_str[2] ||
-							  line_static_str_VISUAL[3] != line_static_str[3] )  ) {
-					line_static_str_VISUAL[2] = line_static_str[2];
-					line_static_str_VISUAL[3] = line_static_str[3];
+			} else {
+				res = GetEntry ( line_static_str[2], line_static_str[3] )
 
-					g_track_B  = line_static_str[2];
-					g_artist_B = line_static_str[3];
-
-					var res = GetEntry ( line_static_str[2], line_static_str[3] );
-
-					line_complete[2] = 0;
-					line_complete[3] = 0;
-
-	console.log ( "Deck B  Title: " + res.track );
-	console.log ( "Deck B Artist: " + res.artist );
-
-					if ( typeof res === "string" ) {
-						$scope.deck_B_error = true;
-						$scope.deck_B = res;
-						$scope.$apply();
-					} else {
+				if ( typeof res === "string" ) {
+					$scope.deck_B_error = true
+					$scope.deck_B = res
+					$scope.$apply()
+					console.log ( "Deck B: " + line_static_str[2] + "  -  " + line_static_str[3] + " : " + res )
+				} else {
+					if ( res && res.track && res.artist ) {
 						$scope.deck_B_error = false;
 						$scope.deck_B = res.track + "  -  " + res.artist;
 						$scope.sourceDeck = "B"
 						$scope.$apply();
-						CreatePlaylist ( res );
+						console.log ( "Deck B: " + $scope.deck_B )
+						CreatePlaylist ( res )
 					}
-
-					$("#loader").css("display","none")
 				}
 			}
 
-			line_static_str_SHADOW[line_idx] = "";
+			$("#loader").css("display","none")
 		} else {
-			if ( new11[line_idx] == 1 ) {
-				line_static_str_SHADOW[line_idx] += line_char_array[line_idx][11];
-				new11[line_idx] = 0;
+			if ( newCharOnPos11[line_idx] ) {
+				line_static_str_SHADOW[line_idx] += line_char_array[line_idx][11]
+				newCharOnPos11[line_idx] = false
 			}
 		}
 	}
@@ -342,7 +237,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	function escapeRegExp ( str ) {
 		// $& = last matched character. In this case this means:
 		// Replace the matched characters with: "\<matched char>"
-		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+		return str ? str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") : ''
 	}
 
 	//Replace underscores with correct special characters from XML object
@@ -714,11 +609,8 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		var ch        = 0;
 		var line      = UNDEFINED;
 		var tmp_pos   = UNDEFINED;
-		var midi_cmd_str = "";
-		var midi_val_str = "";
 		var str       = "";
 
-		// It doesn't make sense to receive anything if the NML file was not loaded successfully
 		if ( !$scope.collection_loaded )
 			return
 
@@ -783,7 +675,6 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 			case LINE_2_CHAR_11_LSB: line = 1; tmp_pos = 10;LSB_1 = midi_val; break;
 			case LINE_2_CHAR_12_LSB: line = 1; tmp_pos = 11;LSB_1 = midi_val; break;
 			default:
-				midi_cmd_str = "UNKNOWN!";
 		}
 
 		var char_complete = 0;
@@ -841,27 +732,27 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		}
 
 		if ( char_complete == 0 )
-			return;
+			return
 
 		if ( deck == "A" ) {
 			if ( line == 0 ) {// Line 1
 				pos[0] = tmp_pos;
-				FillUnwrittenChars ( str, 0 );
-				FindStart ( 0 );
+				BufferConditioner ( str, 0 );
+				ExtractString ( 0 );
 			} else { // Line 2
 				pos[1] = tmp_pos;
-				FillUnwrittenChars ( str, 1 );
-				FindStart ( 1 );
+				BufferConditioner ( str, 1 );
+				ExtractString ( 1 );
 			}
 		} else {
 			if ( line == 0 ) { // Line 1
 				pos[2] = tmp_pos;
-				FillUnwrittenChars ( str, 2 );
-				FindStart ( 2 );
+				BufferConditioner ( str, 2 );
+				ExtractString ( 2 );
 			} else { // Line 2
 				pos[3] = tmp_pos;
-				FillUnwrittenChars ( str, 3 );
-				FindStart ( 3 );
+				BufferConditioner ( str, 3 );
+				ExtractString ( 3 );
 			}
 		}
 	}
