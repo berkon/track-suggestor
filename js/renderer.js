@@ -47,10 +47,10 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 
 	var MSB_0 = UNDEFINED;
 	var LSB_0 = UNDEFINED;
-	var WAIT_LSB_0 = 0;
+	var WAIT_LSB_0 = false
 	var MSB_1 = UNDEFINED;
 	var LSB_1 = UNDEFINED;
-	var WAIT_LSB_1 = 0;
+	var WAIT_LSB_1 = false
 
 	var MIDI_CHAN_HC4500_DECK_A = 0x00;
 	var MIDI_CHAN_HC4500_DECK_B = 0x01;
@@ -108,13 +108,44 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	var LINE_2_CHAR_12_LSB = 0x39;
 
 	var pos           		   = [ -1, -1, -1, -1 ]
-	var last_pos      		   = []
-	var newCharOnPos11    	   = []
+	var last_pos      		   = [ -1, -1, -1, -1 ]
+	var newCharOnPos11    	   = [ false, false, false, false ]
 	var line_char_array        = [ [], [], [], [] ]
-	var line_static_str        = []
+	var line_static_str        = [ '', '', '', '' ]
 	var line_static_str_SHADOW = [ '', '', '', '' ]
 
-	var newTrackLoaded = ''
+	let log = ( str, type ) => {
+		let now = new Date()
+		let h  = now.getHours().toString()
+		let m  = now.getMinutes().toString()
+		let s  = now.getSeconds().toString()
+		let ms = now.getMilliseconds().toString()
+
+		while ( h.length  < 2 ) h  = '0' + h
+		while ( m.length  < 2 ) m  = '0' + m
+		while ( s.length  < 2 ) s  = '0' + s
+		while ( ms.length < 3 ) ms = ms + '0'
+
+		timeStr = h + ':' + m + ':' + s + ':' + ms
+
+		switch ( type ) {
+			case 'ERROR':
+				console.error ( `${timeStr}  ${str}`)
+				break
+
+			case 'WARN':
+			case 'INFO':
+				console.warn ( `${timeStr}  ${str}`)
+				break	
+
+			case 'GREEN':
+				console.log ( `%c${timeStr}  ${str}`, "background: green; color: white;")
+				break
+
+			default:
+				console.log ( `${timeStr}  ${str}`)
+		}
+	}
 
 	ipcRenderer.on ( 'OPEN_SETTINGS', (event, message) => {
 		$scope.openSettings = true
@@ -195,10 +226,11 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		if ( startMarker !== -1 && stopMarker !== -1 && startMarker !== stopMarker ) {
 			startMarker += 3
 			let tmpStr = line_static_str_SHADOW[line_idx].substr ( startMarker, stopMarker - startMarker )
-			line_static_str_SHADOW[line_idx] = ""
 
-			if ( tmpStr === line_static_str[line_idx] )
+			if ( tmpStr === line_static_str[line_idx] ) {
+				line_static_str_SHADOW[line_idx] = ""
 				return
+			}
 
 			line_static_str[line_idx] = tmpStr
 			
@@ -208,14 +240,26 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 				if ( typeof res === "string" ) {
 					$scope.deck_A_error = true
 					$scope.deck_A = res
-					console.log ( "Deck A: " + line_static_str[0] + "  -  " + line_static_str[1] + " : " + res )
+					log ( "Deck A: " + line_static_str[0] + "  -  " + line_static_str[1] + " : " + res )
 					$scope.hideSpinnerA = true
 				} else {
 					if ( res && res.track && res.artist ) {
 						$scope.deck_A_error = false;
 						$scope.deck_A = res.track + "  -  " + res.artist;
 						$scope.sourceDeck = "A"
-						console.log ( "Deck A: " + $scope.deck_A )
+						log ( "Deck A: " + $scope.deck_A, 'GREEN' )
+						log ( "LINE 0 ===========================================" + (line_idx===0?' (just completed)':'') )
+						log ( "line_char_array:        |" + line_char_array[0].join('') + "|" )
+						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[0] + "|" )
+						log ( "line_static_str:        |" + line_static_str[0] + "|" )
+						log ( "pos: " + pos[0])
+						log ( "last_pos: " + last_pos[0])
+						log ( "LINE 1 ===========================================" + (line_idx===1?' (just completed)':'') )
+						log ( "line_char_array:        |" + line_char_array[1].join('') + "|" )
+						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[1] + "|" )
+						log ( "line_static_str:        |" + line_static_str[1] + "|" )
+						log ( "pos: " + pos[1])
+						log ( "last_pos: " + last_pos[1])
 						CreatePlaylist ( res )
 						$scope.hideSpinnerA = true
 					}
@@ -227,20 +271,34 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 				if ( typeof res === "string" ) {
 					$scope.deck_B_error = true
 					$scope.deck_B = res
-					console.log ( "Deck B: " + line_static_str[2] + "  -  " + line_static_str[3] + " : " + res )
+					log ( "Deck B: " + line_static_str[2] + "  -  " + line_static_str[3] + " : " + res )
 					$scope.hideSpinnerB = true
 				} else {
 					if ( res && res.track && res.artist ) {
 						$scope.deck_B_error = false;
 						$scope.deck_B = res.track + "  -  " + res.artist;
 						$scope.sourceDeck = "B"
-						console.log ( "Deck B: " + $scope.deck_B )
+						log ( "Deck B: " + $scope.deck_B, 'GREEN' )
+						log ( "LINE 0 ===========================================" + (line_idx===2?' (just completed)':'') )
+						log ( "line_char_array:        |" + line_char_array[2].join('') + "|" )
+						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[2] + "|" )
+						log ( "line_static_str:        |" + line_static_str[2] + "|" )
+						log ( "pos: " + pos[2])
+						log ( "last_pos: " + last_pos[2])
+						log ( "LINE 1 ===========================================" + (line_idx===3?' (just completed)':'') )
+						log ( "line_char_array:        |" + line_char_array[3].join('') + "|" )
+						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[3] + "|" )
+						log ( "line_static_str:        |" + line_static_str[3] + "|" )
+						log ( "pos: " + pos[3])
+						log ( "last_pos: " + last_pos[3])
 						CreatePlaylist ( res )
 						$scope.hideSpinnerB = true
 					}
 				}
 				$scope.$apply()
 			}
+
+			line_static_str_SHADOW[line_idx] = ""
 		} else {
 			if ( newCharOnPos11[line_idx] ) {
 				line_static_str_SHADOW[line_idx] += line_char_array[line_idx][11]
@@ -598,7 +656,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 			fs.writeFile ( path_and_filename, xml_str, function (err) {
 				if ( err ) {
 					alert("An error ocurred writing the file"+ err.message);
-					console.log(err);
+					log(err);
 					$scope.recommendation_written = false;
 					$scope.$apply();
 					return;
@@ -689,6 +747,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 			case LINE_2_CHAR_10_LSB: line = 1; tmp_pos = 9; LSB_1 = midi_val; break;
 			case LINE_2_CHAR_11_LSB: line = 1; tmp_pos = 10;LSB_1 = midi_val; break;
 			case LINE_2_CHAR_12_LSB: line = 1; tmp_pos = 11;LSB_1 = midi_val; break;
+
 			default:
 		}
 
@@ -696,54 +755,54 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 
 		// Check if LSB_0 received
 		if ( MSB_0 != UNDEFINED && LSB_0 == UNDEFINED ) {
-			if ( WAIT_LSB_0 == 1 ) {
-				console.log ( "ERROR: LSB_0 not received!");
-				MSB_0 = UNDEFINED;
-				WAIT_LSB_0 = 0;
+			if ( WAIT_LSB_0 ) {
+				log ( `ERROR: LSB not received on  Deck: ${deck}  Line: 0!`, 'ERROR' )
+				MSB_0 = UNDEFINED
+				WAIT_LSB_0 = false
 			}
 			else
-				WAIT_LSB_0 = 1;
+				WAIT_LSB_0 = true
 		}
 
 		// Check if MSB_0 received
 		if ( MSB_0 == UNDEFINED && LSB_0 != UNDEFINED ) {
-			console.log ( "ERROR: MSB_0 not received!" );
-			LSB_0 = UNDEFINED;
+			log ( `ERROR: MSB not received on  Deck: ${deck}  Line: 0!`, 'ERROR' )
+			LSB_0 = UNDEFINED
 		}
 
 		if ( MSB_0 != UNDEFINED && LSB_0 != UNDEFINED ) {
 			ch = (MSB_0 << 4) | LSB_0;
-			str = String.fromCharCode ( ch );
-			MSB_0 = UNDEFINED;
-			LSB_0 = UNDEFINED;
-			WAIT_LSB_0 = 0;
-			char_complete = 1;
+			str = String.fromCharCode ( ch )
+			MSB_0 = UNDEFINED
+			LSB_0 = UNDEFINED
+			WAIT_LSB_0 = false
+			char_complete = 1
 		}
 
 		// Check if LSB_1 received
 		if ( MSB_1 != UNDEFINED && LSB_1 == UNDEFINED ) {
-			if ( WAIT_LSB_1 == 1 ) {
-				console.log ( "ERROR: LSB_1 not received!");
-				MSB_1 = UNDEFINED;
-				WAIT_LSB_1 = 0;
+			if ( WAIT_LSB_1 ) {
+				log ( `ERROR: LSB not received on  Deck: ${deck}  Line: 1!`, 'ERROR' )
+				MSB_1 = UNDEFINED
+				WAIT_LSB_1 = false
 			}
 			else
-				WAIT_LSB_1 = 1;
+				WAIT_LSB_1 = true
 		}
 
 		// Check if MSB_1 received
 		if ( MSB_1 == UNDEFINED && LSB_1 != UNDEFINED ) {
-			console.log ( "ERROR: MSB_1 not received!");
-			LSB_1 = UNDEFINED;
+			log ( `ERROR: MSB not received on  Deck: ${deck}  Line: 1!`, 'ERROR' )
+			LSB_1 = UNDEFINED
 		}
 
 		if ( MSB_1 != UNDEFINED && LSB_1 != UNDEFINED ) {
-			ch = (MSB_1 << 4) | LSB_1;
-			str = String.fromCharCode ( ch );
-			MSB_1 = UNDEFINED;
-			LSB_1 = UNDEFINED;
-			WAIT_LSB_1 = 0;
-			char_complete = 1;
+			ch = (MSB_1 << 4) | LSB_1
+			str = String.fromCharCode ( ch )
+			MSB_1 = UNDEFINED
+			LSB_1 = UNDEFINED
+			WAIT_LSB_1 = false
+			char_complete = 1
 		}
 
 		if ( char_complete == 0 )
@@ -801,15 +860,15 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 			$scope.midi_inputs.push ( midi_input )
 
 			if ( midi_input.name === $scope.last_midi_in ) {
-				console.log ("Connecting to MIDI port: " + midi_input.name + "   ...")
+				log ("Connecting to MIDI port: " + midi_input.name + "   ...")
 				midi_input.onmidimessage = midiMessageReceived // This implicitely connects the port!
 				$scope.selected_midi_input = midi_input
 				$scope.cur_midi_input      = midi_input
 			}
 		}
 		$scope.$apply()
-		console.log ("Found MIDI inputs:")
-		console.log ( $scope.midi_inputs )
+		log ("Found MIDI inputs:")
+		log ( $scope.midi_inputs )
 
 		if ( !$scope.selected_midi_input ) {
 			$scope.errors.push ({ id: "ERR_NO_PORT", msg: "ERROR: Please select MIDI port!"})
@@ -819,7 +878,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	}
 
 	function onMidiConnectionStateChange( e ) {
-		console.log("State Changed for: " + e.port.name + " ("+e.port.type+")  State: " + e.port.state.toUpperCase() + "  Connection: " + e.port.connection.toUpperCase());
+		log("State Changed for: " + e.port.name + " ("+e.port.type+")  State: " + e.port.state.toUpperCase() + "  Connection: " + e.port.connection.toUpperCase());
 		if ( e.port.state.toUpperCase() === "CONNECTED" && e.port.connection.toUpperCase() === "OPEN" ) {
 			$scope.midi_connected = true;
 			$scope.$apply();
@@ -839,7 +898,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 
 	function onMIDIError( err ) {
 		$scope.errors.push ({ id: "ERR_MIDI_INIT", msg: "ERROR: MIDI not initialized:" + err.code })
-		console.log( "ERROR: MIDI not initialized:" + err.code );
+		log( "ERROR: MIDI not initialized:" + err.code );
 	}
 
 	let removeError = function ( ids ) {
@@ -859,7 +918,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		fs.readFile( $scope.collection_nml, function (err, data) {
 			g_parser.parseString(data, function (err, xml) {
 				if ( err ) {
-					console.log ( "ERROR: Invalid XML file: " + err )
+					log ( "ERROR: Invalid XML file: " + err )
 					$scope.errors.push ({ id: "ERR_INVALID_XML", msg: ("ERROR: Invalid XML file: " + err) })
 					$scope.collection_loaded = false
 					$scope.openSettings = true
@@ -868,7 +927,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 				}
 				
 				if ( xml && !xml.NML ) {
-					console.log ( "ERROR: Invalid Traktor NML file!" )
+					log ( "ERROR: Invalid Traktor NML file!" )
 					$scope.errors.push ({ id: "ERR_INVALID_NML", msg: "ERROR: Invalid Traktor NML file!" })
 					$scope.collection_loaded = false
 					$scope.openSettings = true
@@ -876,7 +935,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 					return
 				}
 
-				console.log ("Collection loaded successfully!")
+				log ("Collection loaded successfully!")
 				$scope.collection_loaded = true
 				g_xml_data = xml
 				removeError ([ "ERR_INVALID_XML", "ERR_INVALID_NML", "ERR_NO_COLLECTION" ])
@@ -893,7 +952,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		.then ( (file_arr) => {
 			// fileNames is an array that contains all the selected
 			if ( typeof file_arr === undefined || !file_arr.filePaths.length ) {
-				console.log("No file selected");
+				log("No file selected");
 			} else {
 				$scope.collection_nml = file_arr.filePaths[0];
 				$scope.$apply();
@@ -912,7 +971,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		.then ( ( paths ) => {
 			// folderPaths is an array that contains all the selected paths
 			if ( paths.canceled ) {
-				console.log ( "No folder selected!" )
+				log ( "No folder selected!" )
 				return
 			} else {
 				$scope.recommendation_path = paths.filePaths[0]
@@ -947,14 +1006,14 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 
 	if ( !$scope.collection_nml ) {
 		$scope.errors.push ({ id: "ERR_NO_COLLECTION", msg: "ERROR: Please select collection.nml first!" })
-		console.log ( "ERROR: Please select collection.nml first!" )
+		log ( "ERROR: Please select collection.nml first!" )
 		$scope.openSettings = true
 	} else
 		ReadCollectionNML()
 
 	if ( !$scope.recommendation_path ) {
 		$scope.errors.push ({ id: "ERR_NO_RECOMMEND_FOLDER", msg: "ERROR: Please select a folder to store recommendation playlists!" })
-		console.log ( "ERROR: Please select a folder to store recommendation playlists!" )
+		log ( "ERROR: Please select a folder to store recommendation playlists!" )
 		$scope.openSettings = true
 	}
 })
