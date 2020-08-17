@@ -203,106 +203,98 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		let startMarker = line_static_str_SHADOW[line_idx].indexOf    ("   ")
 		let stopMarker  = line_static_str_SHADOW[line_idx].lastIndexOf("   ")
 		let res         = null
+		let startIdx    = -1
+		let strLength   = 0
 
-		if ( startMarker !== -1 && stopMarker === startMarker)
-			stopMarker = -1
+		if ( line_idx < 2 )
+			isDeckA = true
+		else
+			isDeckA = false
+		
+		if ( line_idx === 0 || line_idx === 2)
+			isFirstLine = true
+		else
+			isFirstLine = false
 
-		if ( startMarker !== -1 && 
-			 stopMarker  === -1 &&
-			 line_static_str[line_idx] &&
-			 line_static_str[line_idx].indexOf(line_static_str_SHADOW[line_idx].substr(startMarker + 3).trim()) === -1 ) {
-
-			if ( line_idx < 2) {
-				$scope.hideSpinnerA = false
-				$scope.deck_A = "Loading ..."
-			} else {
-				$scope.hideSpinnerB = false
-				$scope.deck_B = "Loading ..."
-			}
-			$scope.$apply()
+		if ( newCharOnPos11[line_idx] ) {
+			line_static_str_SHADOW[line_idx] += line_char_array[line_idx][11]
+			newCharOnPos11[line_idx] = false
 		}
 
+		if ( startMarker !== -1 ) { // Found start marker
+			startIdx = startMarker + 3
 
-		if ( startMarker !== -1 && stopMarker !== -1 && startMarker !== stopMarker ) {
-			startMarker += 3
-			let tmpStr = line_static_str_SHADOW[line_idx].substr ( startMarker, stopMarker - startMarker )
+			if ( stopMarker < startIdx + 1 )
+				stopMarker = -1
+			else
+				strLength = stopMarker - startIdx
 
-			if ( tmpStr === line_static_str[line_idx] ) {
-				line_static_str_SHADOW[line_idx] = ""
-				return
-			}
-
-			line_static_str[line_idx] = tmpStr
-			
-			if ( line_idx < 2) {
-				res = GetEntry ( line_static_str[0], line_static_str[1] )
-
-				if ( typeof res === "string" ) {
-					$scope.deck_A_error = true
-					$scope.deck_A = res
-					log ( "Deck A: " + line_static_str[0] + "  -  " + line_static_str[1] + " : " + res )
-					$scope.hideSpinnerA = true
-				} else {
-					if ( res && res.track && res.artist ) {
-						$scope.deck_A_error = false;
-						$scope.deck_A = res.track + "  -  " + res.artist;
-						$scope.sourceDeck = "A"
-						log ( "Deck A: " + $scope.deck_A, 'GREEN' )
-						log ( "LINE 0 ===========================================" + (line_idx===0?' (just completed)':'') )
-						log ( "line_char_array:        |" + line_char_array[0].join('') + "|" )
-						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[0] + "|" )
-						log ( "line_static_str:        |" + line_static_str[0] + "|" )
-						log ( "pos: " + pos[0])
-						log ( "last_pos: " + last_pos[0])
-						log ( "LINE 1 ===========================================" + (line_idx===1?' (just completed)':'') )
-						log ( "line_char_array:        |" + line_char_array[1].join('') + "|" )
-						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[1] + "|" )
-						log ( "line_static_str:        |" + line_static_str[1] + "|" )
-						log ( "pos: " + pos[1])
-						log ( "last_pos: " + last_pos[1])
-						CreatePlaylist ( res )
-						$scope.hideSpinnerA = true
-					}
+			if ( stopMarker === -1 ) { // No stop marker
+				if ( line_static_str[line_idx] && line_static_str[line_idx].indexOf(line_static_str_SHADOW[line_idx].substr(startIdx).trim()) === -1 ) {
+					isDeckA ? $scope.hideSpinnerA = false :	$scope.hideSpinnerB = false
+					$scope.$apply()
 				}
-				$scope.$apply()
-			} else {
-				res = GetEntry ( line_static_str[2], line_static_str[3] )
+			} else { // Found stop marker
+				if ( startMarker !== stopMarker ) { // Found valid string
+					let tmpStr = line_static_str_SHADOW[line_idx].substr ( startIdx, strLength )
 
-				if ( typeof res === "string" ) {
-					$scope.deck_B_error = true
-					$scope.deck_B = res
-					log ( "Deck B: " + line_static_str[2] + "  -  " + line_static_str[3] + " : " + res )
-					$scope.hideSpinnerB = true
-				} else {
-					if ( res && res.track && res.artist ) {
-						$scope.deck_B_error = false;
-						$scope.deck_B = res.track + "  -  " + res.artist;
-						$scope.sourceDeck = "B"
-						log ( "Deck B: " + $scope.deck_B, 'GREEN' )
-						log ( "LINE 0 ===========================================" + (line_idx===2?' (just completed)':'') )
-						log ( "line_char_array:        |" + line_char_array[2].join('') + "|" )
-						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[2] + "|" )
-						log ( "line_static_str:        |" + line_static_str[2] + "|" )
-						log ( "pos: " + pos[2])
-						log ( "last_pos: " + last_pos[2])
-						log ( "LINE 1 ===========================================" + (line_idx===3?' (just completed)':'') )
-						log ( "line_char_array:        |" + line_char_array[3].join('') + "|" )
-						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[3] + "|" )
-						log ( "line_static_str:        |" + line_static_str[3] + "|" )
-						log ( "pos: " + pos[3])
-						log ( "last_pos: " + last_pos[3])
-						CreatePlaylist ( res )
-						$scope.hideSpinnerB = true
+					if ( tmpStr === line_static_str[line_idx] ) {
+						line_static_str_SHADOW[line_idx] = ""
+						return
 					}
-				}
-				$scope.$apply()
-			}
 
-			line_static_str_SHADOW[line_idx] = ""
-		} else {
-			if ( newCharOnPos11[line_idx] ) {
-				line_static_str_SHADOW[line_idx] += line_char_array[line_idx][11]
-				newCharOnPos11[line_idx] = false
+					log ( "Line " + line_idx + " is differing! =========================")
+					log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[line_idx] + "|" )
+					log ( "tmpStr:                 |" + tmpStr + "|" )
+					log ( "line_static_str:        |" + line_static_str[line_idx] + "|" )
+					
+					// Sometimes there are errors in MIDI transmission which causes unwanted characters to be inserted
+					// This results in tracks being reloaded unintentionally. Thus, everytime there is a missmatch
+					// we are checking whether this is a valid string by checking against the database
+					if ( isFirstLine ) {
+						if ( !CheckTrackName ( tmpStr ) ) {
+							line_static_str_SHADOW[line_idx] = ""
+							isDeckA ? $scope.hideSpinnerA = true : $scope.hideSpinnerB = true
+							$scope.$apply()
+							return
+						}
+					} else {
+						if ( !CheckArtistName ( tmpStr ) ) {
+							line_static_str_SHADOW[line_idx] = ""
+							isDeckA ? $scope.hideSpinnerA = true : $scope.hideSpinnerB = true
+							$scope.$apply()
+							return
+						}
+					}
+
+					line_static_str[line_idx] = tmpStr
+					res = GetEntry ( line_static_str[isDeckA?0:2], line_static_str[isDeckA?1:3] )
+
+					if ( typeof res === "string" ) {
+						isDeckA ? $scope.deck_A_error = true : $scope.deck_B_error = true
+						isDeckA ? $scope.deck_A = res : $scope.deck_B = res
+						log ( `Deck ${isDeckA ? 'A' : 'B'}: ${line_static_str[isDeckA?line_idx:line_idx+2]}  -  ${line_static_str[isDeckA?line_idx+1:line_idx+3]} : ${res}` )
+						isDeckA ? $scope.hideSpinnerA = true : $scope.hideSpinnerB = true
+					} else if ( res && res.track && res.artist ) {
+						isDeckA ? $scope.deck_A_error = false : $scope.deck_B_error = false
+						isDeckA ? $scope.deck_A = res.track + "  -  " + res.artist : $scope.deck_B = res.track + "  -  " + res.artist
+						$scope.sourceDeck = isDeckA ? 'A' :'B'
+						log ( `Deck ${isDeckA ? 'A' : 'B'} : ${isDeckA ? $scope.deck_A : $scope.deck_B}`, 'GREEN' )
+						log ( "LINE 0 ===========================================" + (line_idx===0 || line_idx===2 ? ' (just completed)' : '') )
+						log ( "line_char_array:        |" + line_char_array       [isDeckA?0:2].join('') + "|" )
+						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[isDeckA?0:2] + "|" )
+						log ( "line_static_str:        |" + line_static_str       [isDeckA?0:2] + "|" )
+						log ( "LINE 1 ===========================================" + (line_idx===1 || line_idx===3 ? ' (just completed)' : '') )
+						log ( "line_char_array:        |" + line_char_array       [isDeckA?1:3].join('') + "|" )
+						log ( "line_static_str_SHADOW: |" + line_static_str_SHADOW[isDeckA?1:3] + "|" )
+						log ( "line_static_str:        |" + line_static_str       [isDeckA?1:3] + "|" )
+						CreatePlaylist ( res )
+						isDeckA ? $scope.hideSpinnerA = true : $scope.hideSpinnerB = true
+					}
+					$scope.$apply()
+
+					line_static_str_SHADOW[line_idx] = ""
+				}
 			}
 		}
 	}
@@ -311,6 +303,52 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 		// $& = last matched character. In this case this means:
 		// Replace the matched characters with: "\<matched char>"
 		return str ? str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") : ''
+	}
+
+	// Check if Track name exists. This is a check to eleminate MIDI transmission errors
+	function CheckTrackName ( track_pattern ) {
+		let found = false
+		num_of_tracks  = g_xml_data.NML.COLLECTION[0].ENTRY.length
+		track_pattern = escapeRegExp ( track_pattern ) // Escape all special characters
+		track_pattern = track_pattern.replace ( /_/g, ".*") // Replace underscores with a dot
+
+		for ( var entry_idx = 0; entry_idx < num_of_tracks; entry_idx++) {
+			let entry = g_xml_data.NML.COLLECTION[0].ENTRY[entry_idx]
+			let track  = entry.$.TITLE
+
+			if ( track && track.match("^"+track_pattern+"$") ) {
+				found = true
+				break
+			}
+		}
+
+		if (!found)
+			log ( "Not found: |" + track_pattern + '| ... ignoring!', 'ERROR' )
+
+		return found ? true : false
+	}
+
+	// Check if Artist name exists. This is a check to eleminate MIDI transmission errors
+	function CheckArtistName ( artist_pattern ) {
+		let found = false
+		num_of_tracks  = g_xml_data.NML.COLLECTION[0].ENTRY.length
+		artist_pattern = escapeRegExp ( artist_pattern ) // Escape all special characters
+		artist_pattern = artist_pattern.replace(/_/g, ".*") // Replace underscores with a dot
+
+		for ( var entry_idx = 0; entry_idx < num_of_tracks; entry_idx++) {
+			let entry = g_xml_data.NML.COLLECTION[0].ENTRY[entry_idx]
+			let artist = entry.$.ARTIST
+
+			if ( artist && artist.match("^"+artist_pattern+"$") ) {
+				found = true
+				break
+			}
+		}
+
+		if (!found)
+			log ( "Not found: |" + artist_pattern + '| ... ignoring!', 'ERROR' )
+
+		return found ? true : false
 	}
 
 	//Replace underscores with correct special characters from XML object
