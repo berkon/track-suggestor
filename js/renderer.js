@@ -16,15 +16,14 @@ const conf = new config ( pkg.name, {
 var g_xml_data = "";
 var g_parser   = new xml2js.Parser();
 
-angular.module('track_suggestor', ['ServiceModule']);
+angular.module('track_suggestor', [])
 
-angular.module('track_suggestor').controller('suggestor', function ($rootScope, $scope, alertService, viewTab) {
+angular.module('track_suggestor').controller('suggestor', function ($rootScope, $scope) {
 	$scope.collection_nml      = conf.get ("collection_nml"     );
 	$scope.recommendation_path = conf.get ("recommendation_path");
 	$scope.last_midi_in        = conf.get ("last_midi_in"       );
 
 	$scope.openSettings = false
-	$scope.viewTab = viewTab;
 	$scope.midi_connected         = false;
 	$scope.selected_midi_input    = null;
 	$scope.cur_midi_input         = null;
@@ -921,7 +920,6 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 			$scope.midi_connected = true;
 			$scope.$apply();
 		}
-//			alertService.add( 'success', 'Succesfully connected to MIDI port: ' + e.port.name );
 	}
 
 	function waitForMIDI ( midi ) {
