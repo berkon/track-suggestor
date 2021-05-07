@@ -41,7 +41,7 @@ body{
     margin-right: 10px!important;
 }
 
-input {
+input[type=text] {
 	background: #ebebeb!important;
 	width: 100%;
 }
@@ -126,7 +126,7 @@ label {
 	position: absolute;
 	display: flex;
 	flex-direction: column;
-	top: 180px;
+	top: 150px;
 	bottom: 15px;
 	left: 15px;
 	right: 15px;
@@ -256,7 +256,7 @@ h4 {
 	text-align: center;
 }
 
-select, input {
+select, input[type=text] {
 	-webkit-appearance: none;
 	appearance: none;
 	border: none;
@@ -265,7 +265,7 @@ select, input {
 	outline: none;
 }
 
-input {
+input[type=text] {
 	box-sizing: border-box;
 	border-top-left-radius: 5px;
 	border-bottom-left-radius: 5px;
@@ -324,4 +324,10 @@ option {
 
 .hidden {
 	display: none;
+}
+
+.filter-hint {
+	color: gray;
+    font-size: 12px;
+	margin: 4px;
 }

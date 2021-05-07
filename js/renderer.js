@@ -10,7 +10,9 @@ var dialog = app.dialog;
 const conf = new config ( pkg.name, {
 	"collection_nml"      : "",
 	"recommendation_path" : "",
-	"last_midi_in"        : ""
+	"last_midi_in"        : "",
+	"minimum_track_rating": "0",
+	"track_filter"        : ""
 	});
 
 var g_xml_data = "";
@@ -22,8 +24,10 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	$scope.collection_nml      = conf.get ("collection_nml"     );
 	$scope.recommendation_path = conf.get ("recommendation_path");
 	$scope.last_midi_in        = conf.get ("last_midi_in"       );
+	$scope.minimum_track_rating= conf.get ("minimum_track_rating")
+	$scope.track_filter        = conf.get ("track_filter"       )
 
-	$scope.openSettings = false
+	$scope.openSettings           = false
 	$scope.midi_connected         = false;
 	$scope.selected_midi_input    = null;
 	$scope.cur_midi_input         = null;
@@ -606,14 +610,39 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 			else
 				continue;
 
+			let filter_arr = $scope.track_filter.split(";")
+
 			if ( ( bpm >= entry2match.bpm - bpm_delta && bpm <= entry2match.bpm + bpm_delta ) &&
 			( key === entry2match.key || key === matching_keys.next_val || key === matching_keys.prev_val  || key === matching_keys.mode ) &&
-			rating === 255 &&
-			genre !== "HIDE_THIS" &&
-			( label === "G" || label === "GL" ) &&
+			rating >= parseInt($scope.minimum_track_rating) &&
 			track !== entry2match.track &&
 			artist !== entry2match.artist ) {
-				if ( typeof create_7_list === 'undefined' || !(key === entry2match.key || key === matching_keys.mode) ) {
+
+				let isMatching = false
+
+				for ( filter of filter_arr ) {
+					col_name   = filter.split('=')[0]
+					col_filter = filter.split('=')[1]
+
+					if ( col_name && col_filter ) {
+						const regex = new RegExp ( col_filter ) // '^G$' ... G only
+
+						switch ( col_name ) {
+							case 'TRACK' : isMatching = regex.test ( track  ); break
+							case 'ARTIST': isMatching = regex.test ( artist ); break
+							case 'GENRE' : isMatching = regex.test ( genre  );	break
+							case 'LABEL' : isMatching = regex.test ( label  ); break
+						}
+
+						if ( !isMatching )
+							break
+					}
+				}
+
+				if ( !filter_arr.length || !filter_arr[0] )
+					isMatching = true
+
+				if ( isMatching && (typeof create_7_list === 'undefined' || !(key === entry2match.key || key === matching_keys.mode)) ) {
 					matching_tracks_arr.push ({
 						"track" : track ,
 						"artist": artist,
@@ -1036,6 +1065,17 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 			return 'source-deck'
 		else
 			return 'deck-output-default-color'
+	}
+
+	$scope.setRating = function () {
+		if ( !$scope.minimum_track_rating )
+			$scope.minimum_track_rating = "0"
+
+		conf.set ( "minimum_track_rating", $scope.minimum_track_rating )
+	}
+
+	$scope.saveFilter = function () {
+		conf.set ( "track_filter", $scope.track_filter )
 	}
 
 	navigator.requestMIDIAccess().then ( waitForMIDI, onMIDIError )

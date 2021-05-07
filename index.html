@@ -36,6 +36,24 @@
 				<button class="unicode-icon" ng-class="recommendation_path ? 'success' : 'error'" ng-click="ChooseRecommendationPath()">&#128193;</button>
 			</div>
 
+			<div style="flex-direction: row;" class="margin-top-30" title="Show only tracks rated higher or equal than selected rating">
+				<h4>Set minimum track rating</h4>
+				<select class="success" ng-change="setRating()" ng-model="minimum_track_rating">
+					<option value="0" selected>&lt;No Rating&gt;</option>
+					<option value="51"  ng-selected="minimum_track_rating=='51'" >1 star</option>
+					<option value="102" ng-selected="minimum_track_rating=='102'">2 stars</option>
+					<option value="153" ng-selected="minimum_track_rating=='153'">3 stars</option>
+					<option value="204" ng-selected="minimum_track_rating=='204'">4 stars</option>
+					<option value="255" ng-selected="minimum_track_rating=='255'">5 stars</option>
+				</select>
+			</div>
+
+			<h4 class="margin-top-40">Filter tracks</h4>
+			<div style="display:flex; flex-direction: row" title="Filter tracks via regular expression">
+				<input type="text" value="{{track_filter}}" ng-model="track_filter" ng-change="saveFilter()">
+			</div>
+			<p class="filter-hint">e.g. LABEL=^My Label$;GENRE=^(?!HIDE_THIS).*$<br>These are two regular expressions concatenated by semicolon. Each one specifies a filter for a certain column. Currently only TRACK, ARTIST, GENRE,LABEL are supported. This examples would show only tracks with the label "My Label" and which do NOT have "HIDE_THIS" set as the genre.</p>
+
 			<button class="back-button margin-top-70" ng-click="openSettings=!openSettings">Back</button>
 		</div>
 
