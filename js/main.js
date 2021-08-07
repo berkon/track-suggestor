@@ -13,7 +13,11 @@ let helpWindow
 function createWindow () {
 
 	mainWindow = new BrowserWindow ( {
-		webPreferences: { nodeIntegration: true },
+		webPreferences: {
+			nodeIntegration: true,
+			contextIsolation: false,
+			enableRemoteModule: true
+			},
 		width: 800,
 		height: 768,
 		minWidth: 600,
@@ -23,6 +27,15 @@ function createWindow () {
 	});
 
 	let wc = mainWindow.webContents;
+
+	/*
+// Not needed yet, but might be needed in future chrome versions due to this
+// deprecation warning: https://www.chromestatus.com/feature/5138066234671104
+	wc.session.setPermissionRequestHandler ( (webContents, permission, callback) => {
+		// Allow access to any incoming permission request. callback(false) refuses that incoming permission request.
+	  	callback(true)
+	})
+*/
 
 	mainWindow.loadURL("file://" + __dirname + "/../index.html");
 	//mainWindow.webContents.openDevTools();

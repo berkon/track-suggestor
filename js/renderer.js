@@ -1050,7 +1050,11 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 	$scope.openDonateWindow = function () {
 		const { BrowserWindow } = require('electron').remote;
 		let win = new BrowserWindow ({
-			webPreferences: { nodeIntegration: true },
+			webPreferences: {
+				nodeIntegration: true,
+				contextIsolation: false,
+				enableRemoteModule: true
+			},
 			width: 1220,
 			height: 800
 		})
