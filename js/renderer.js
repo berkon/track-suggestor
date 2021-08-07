@@ -239,7 +239,7 @@ angular.module('track_suggestor').controller('suggestor', function ($rootScope, 
 				}
 			} else { // Found stop marker
 				if ( startMarker !== stopMarker ) { // Found valid string
-					let tmpStr = line_static_str_SHADOW[line_idx].substr ( startIdx, strLength )
+					let tmpStr = line_static_str_SHADOW[line_idx].substr ( startIdx, strLength ).trim()
 
 					if ( tmpStr === line_static_str[line_idx] ) {
 						line_static_str_SHADOW[line_idx] = ""
