@@ -1,7 +1,7 @@
 {
   "name": "track_suggestor",
   "productName": "Track Suggestor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Suggest matching songs to DJs using Traktor Pro",
   "main": "./js/main.js",
   "scripts": {
